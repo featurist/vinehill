@@ -35,7 +35,17 @@ module.exports = function(url, app) {
           body: req._body,
         };
         var responseHandler = {
-          end: function(body){
+          get(name){
+            return response.header(name);
+          },
+          setHeader(name, value){
+            response.header(name, value);
+          },
+          end: function(chunk, encoding){
+            var body = chunk;
+            if (chunk instanceof Buffer) {
+              body = chunk.toString(encoding);
+            }
             response.body(body);
             success(response);
           }

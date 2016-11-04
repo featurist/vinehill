@@ -11,6 +11,7 @@
   "devDependencies": {
     "chai": "3.5.0",
     "connect": "3.5.0",
+    "express": "4.14.0",
     "httpism": "2.4.2",
     "mocha": "3.1.2"
   },

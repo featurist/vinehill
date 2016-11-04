@@ -1,5 +1,6 @@
 var expect = require('chai').expect;
 var connect = require('connect');
+var express = require('express');
 var httpism = require('httpism/browser');
 var vinehill = require('../');
 
@@ -14,7 +15,7 @@ describe('virtual http adapter', () => {
 
     return httpism.get('http://server1/some/file.txt').then(response => {
       expect(response.body).to.eql('some response');
-    }); 
+    });
   });
 
   it('request from server that does not exist', () => {
@@ -22,7 +23,7 @@ describe('virtual http adapter', () => {
 
     return new Promise(function(passed, failed) {
       return httpism.get('http://server2/some/file.txt').then(() => {
-        failed(new Error('should not have been handled')); 
+        failed(new Error('should not have been handled'));
       }).catch(e => {
         expect(e.message).to.include('No app exists');
         passed();
@@ -50,8 +51,8 @@ describe('virtual http adapter', () => {
       }).then(() => {
         return httpism.get('http://server2/some/file.txt').then(response => {
           expect(response.body).to.eql('app2');
-        }); 
-      }); 
+        });
+      });
     });
   });
 
@@ -69,7 +70,26 @@ describe('virtual http adapter', () => {
       expect(response.body).to.eql({
         ok: true
       });
-    }); 
+    });
+  });
+
+  context('express', () => {
+    it('GET json response', () => {
+      var app = express();
+      app.get('/some/file.json', (req, res) => {
+        res.json({
+          ok: true
+        });
+      });
+
+      vinehill('http://server1', app);
+
+      return httpism.get('http://server1/some/file.json').then(response => {
+        expect(response.body).to.eql({
+          ok: true
+        });
+      });
+    });
   });
 
   it('POST json body', () => {
@@ -84,6 +104,6 @@ describe('virtual http adapter', () => {
       expect(response.body).to.eql({
         hello: 'world'
       });
-    }); 
+    });
   });
 });
