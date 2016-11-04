@@ -4,7 +4,8 @@
   "description": "In process bridge between http requests and connect based servers",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "release-patch": "npm version patch && git push origin master && git push origin --tags && npm publish"
   },
   "author": "Derek Ekins",
   "license": "MIT",
@@ -17,5 +18,23 @@
   },
   "dependencies": {
     "global": "4.3.1"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dereke/vinehill.git"
+  },
+  "keywords": [
+    "http",
+    "express",
+    "mock",
+    "virtual",
+    "xhr"
+  ],
+  "bugs": {
+    "url": "https://github.com/dereke/vinehill/issues"
+  },
+  "homepage": "https://github.com/dereke/vinehill#readme"
 }
