@@ -4,7 +4,7 @@ A Virtual Http adapter to allow in process xhr
 # Why?
 Full stack testing of server and client code allows you to describe at a high level what an application does. Actually starting and running servers along with dispatching requests is slow and prone to errors.
 
-Vine Hill allows you to "start" a server virutally and connect it with your client code by installing a bridge between XmlHttpRequest and your server. This allows the server to respond to requests in the same process as your client code and tests are running. 
+Vine Hill allows you to "start" a server virutally and connect it with your client code by installing a bridge between XmlHttpRequest and your server. This allows the server to respond to requests in the same process as your client code and tests are running.
 
 What you get is high performance tests with easy to ready stacktraces and great debugability.
 
@@ -27,7 +27,7 @@ var vinehill = require('vinehill');
 vinehill('http://weather.com', app);
 
 
-var httpism = require('httpism');
+var httpism = require('httpism/browser');
 httpism.get('http://weather.com/weather/london').then(response => {
   console.log(response.body.temp);
 });
