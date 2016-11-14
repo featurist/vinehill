@@ -5,6 +5,8 @@ var httpism = require('httpism/browser');
 var vinehill = require('../');
 
 describe('virtual http adapter', () => {
+  beforeEach(vinehill.reset);
+
   it('GET plain text response', () => {
     var app = connect();
     app.use('/some/file.txt', (req, res) => {
@@ -15,6 +17,37 @@ describe('virtual http adapter', () => {
 
     return httpism.get('http://server1/some/file.txt').then(response => {
       expect(response.body).to.eql('some response');
+    });
+  });
+
+  context('origin', () => {
+    it('requests are made from the origin', () => {
+      var app = connect();
+      app.use('/some/file.txt', (req, res) => {
+        setTimeout(() => {
+          res.end('some response');
+        }, 500);
+      });
+
+      vinehill.setOrigin('http://server1');
+      vinehill('http://server1', app);
+
+      return httpism.get('/some/file.txt').then(response => {
+        expect(response.body).to.eql('some response');
+      });
+    });
+
+    it('requests made with no origin set and that dont specify a host error', () => {
+      vinehill('http://server1', connect());
+
+      return new Promise(function(passed, failed) {
+        return httpism.get('/some/file.txt').then(() => {
+          failed(new Error('should not have been handled'));
+        }).catch(e => {
+          expect(e.message).to.include('Use `setOrigin` to make requests without a host');
+          passed();
+        })
+      });
     });
   });
 

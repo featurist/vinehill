@@ -3,15 +3,20 @@ var MockXMLHttpRequest = require('./lib/MockXMLHttpRequest');
 var MockResponse = require('./lib/MockResponse');
 
 var appDNS = {};
+var defaultOrigin;
 
 function getOrigin(url) {
-  return url.match(/^(https?:\/\/.*?)\/.*/i)[1];
+  var origin = url.match(/^(https?:\/\/.*?)\/.*/i);
+  if (origin) {
+    return origin[1];
+  }
+  return defaultOrigin;
 }
 
 module.exports = function(url, app) {
-  window.location = {
-    origin: ''
-  }
+  window.location = window.location || {};
+  window.location.pathname = window.location.pathname || '/';
+  window.location.origin = window.location.origin || '';
 
   appDNS[url] = app;
 
@@ -20,6 +25,9 @@ module.exports = function(url, app) {
     var xhr = new MockXMLHttpRequest();
     xhr.sendToServer = function(req) {
       var origin = getOrigin(req._url);
+      if (!origin) {
+        throw new Error('Use `setOrigin` to make requests without a host');
+      }
       var requestApp = appDNS[origin];
       if (!requestApp) {
         var noAppError = new Error(`No app exists to listen to requests for ${origin}`);
@@ -56,4 +64,13 @@ module.exports = function(url, app) {
     }
     return xhr;
   }
+}
+
+module.exports.setOrigin = function(url) {
+  defaultOrigin = url;
+}
+
+module.exports.reset = function(){
+  defaultOrigin = null;
+  appDns = {};
 }
