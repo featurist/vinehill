@@ -2,33 +2,38 @@ var window = require('global');
 var MockXMLHttpRequest = require('./lib/MockXMLHttpRequest');
 var MockResponse = require('./lib/MockResponse');
 
-var appDNS = {};
-var defaultOrigin;
+function VineHill() {
+  this.appDNS = {};
+}
 
-function getOrigin(url) {
+VineHill.prototype.add = function(host, app) {
+  if (Object.keys(this.appDNS).length === 0) this.setOrigin(host);
+  this.appDNS[host] = app;
+}
+
+VineHill.prototype.getOrigin = function(url) {
   var origin = url.match(/^(https?:\/\/.*?)\/.*/i);
   if (origin) {
     return origin[1];
   }
-  return defaultOrigin;
+  return this.defaultOrigin;
 }
 
-module.exports = function(url, app) {
+VineHill.prototype.start = function(url, app) {
+  var self = this;
   window.location = window.location || {};
   window.location.pathname = window.location.pathname || '/';
   window.location.origin = window.location.origin || '';
-
-  appDNS[url] = app;
 
   window.XMLHttpRequest = function() {
     var requestStack = new Error().stack;
     var xhr = new MockXMLHttpRequest();
     xhr.sendToServer = function(req) {
-      var origin = getOrigin(req._url);
-      if (!origin) {
-        throw new Error('Use `setOrigin` to make requests without a host');
+      if (Object.keys(self.appDNS).length === 0) {
+        throw new Error('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
       }
-      var requestApp = appDNS[origin];
+      var origin = self.getOrigin(req._url);
+      var requestApp = self.appDNS[origin];
       if (!requestApp) {
         var noAppError = new Error(`No app exists to listen to requests for ${origin}`);
         noAppError.stack = requestStack;
@@ -66,11 +71,13 @@ module.exports = function(url, app) {
   }
 }
 
-module.exports.setOrigin = function(url) {
-  defaultOrigin = url;
+VineHill.prototype.setOrigin = function(host) {
+  this.defaultOrigin = host;
 }
 
-module.exports.reset = function(){
-  defaultOrigin = null;
-  appDns = {};
+VineHill.prototype.stop = function() {
+  this.defaultOrigin = null;
+  this.appDNS = {};
 }
+
+module.exports = VineHill;

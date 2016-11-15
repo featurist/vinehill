@@ -2,10 +2,15 @@ var expect = require('chai').expect;
 var connect = require('connect');
 var express = require('express');
 var httpism = require('httpism/browser');
-var vinehill = require('../');
+var VineHill = require('../');
 
 describe('virtual http adapter', () => {
-  beforeEach(vinehill.reset);
+  var vine;
+  beforeEach(() => {
+    vine = new VineHill();
+  });
+
+  afterEach(() => vine.stop());
 
   it('GET plain text response', () => {
     var app = connect();
@@ -13,7 +18,8 @@ describe('virtual http adapter', () => {
       res.end('some response');
     });
 
-    vinehill('http://server1', app);
+    vine.add('http://server1', app);
+    vine.start();
 
     return httpism.get('http://server1/some/file.txt').then(response => {
       expect(response.body).to.eql('some response');
@@ -24,27 +30,25 @@ describe('virtual http adapter', () => {
     it('requests are made from the origin', () => {
       var app = connect();
       app.use('/some/file.txt', (req, res) => {
-        setTimeout(() => {
-          res.end('some response');
-        }, 500);
+        res.end('some response');
       });
 
-      vinehill.setOrigin('http://server1');
-      vinehill('http://server1', app);
+      vine.add('http://server1', app);
+      vine.start();
 
       return httpism.get('/some/file.txt').then(response => {
         expect(response.body).to.eql('some response');
       });
     });
 
-    it('requests made with no origin set and that dont specify a host error', () => {
-      vinehill('http://server1', connect());
+    it('requests made but no hosts added', () => {
+      vine.start();
 
       return new Promise(function(passed, failed) {
         return httpism.get('/some/file.txt').then(() => {
           failed(new Error('should not have been handled'));
         }).catch(e => {
-          expect(e.message).to.include('Use `setOrigin` to make requests without a host');
+          expect(e.message).to.include('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
           passed();
         })
       });
@@ -52,7 +56,8 @@ describe('virtual http adapter', () => {
   });
 
   it('request from server that does not exist', () => {
-    vinehill('http://server1', connect());
+    vine.add('http://server1', connect());
+    vine.start();
 
     return new Promise(function(passed, failed) {
       return httpism.get('http://server2/some/file.txt').then(() => {
@@ -76,8 +81,9 @@ describe('virtual http adapter', () => {
         res.end('app2');
       });
 
-      vinehill('http://server1', app1);
-      vinehill('http://server2', app2);
+      vine.add('http://server1', app1);
+      vine.add('http://server2', app2);
+      vine.start();
 
       return httpism.get('http://server1/some/file.txt').then(response => {
         expect(response.body).to.eql('app1');
@@ -97,7 +103,8 @@ describe('virtual http adapter', () => {
       });
     });
 
-    vinehill('http://server1', app);
+    vine.add('http://server1', app);
+    vine.start();
 
     return httpism.get('http://server1/some/file.json').then(response => {
       expect(response.body).to.eql({
@@ -115,7 +122,8 @@ describe('virtual http adapter', () => {
         });
       });
 
-      vinehill('http://server1', app);
+      vine.add('http://server1', app);
+      vine.start();
 
       return httpism.get('http://server1/some/file.json').then(response => {
         expect(response.body).to.eql({
@@ -131,7 +139,8 @@ describe('virtual http adapter', () => {
       res.end(JSON.parse(req.body));
     });
 
-    vinehill('http://server1', app);
+    vine.add('http://server1', app);
+    vine.start();
 
     return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(response => {
       expect(response.body).to.eql({
