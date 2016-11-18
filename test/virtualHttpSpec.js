@@ -69,6 +69,24 @@ describe('virtual http adapter', () => {
     });
   });
 
+  it('sends headers to the server', () => {
+    var app = express();
+    app.get('/some/file.json', (req, res) => {
+      res.json(req.headers);
+    });
+
+    vine.add('http://server1', app);
+    vine.start();
+
+    return httpism.get('http://server1/some/file.json',{
+      headers: {user: 'blob'}
+    }).then(response => {
+      expect(response.body).to.include({
+        user: 'blob'
+      });
+    });
+  });
+
   context('multiple servers', () => {
     it('GET plain text response', () => {
       var app1 = connect();

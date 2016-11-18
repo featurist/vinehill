@@ -46,8 +46,12 @@ VineHill.prototype.start = function(url, app) {
           url: req._url,
           method: req._method,
           body: req._body,
+          headers: req._headers,
+          _readableState: {},
+          socket: {},
         };
         var responseHandler = {
+          _removedHeader: {},
           get(name){
             return response.header(name);
           },
