@@ -4,6 +4,7 @@ var express = require('express');
 var httpism = require('httpism/browser');
 var VineHill = require('../');
 
+
 describe('virtual http adapter', () => {
   var vine;
   beforeEach(() => {
@@ -18,8 +19,9 @@ describe('virtual http adapter', () => {
       res.end('some response');
     });
 
-    vine.add('http://server1', app);
-    vine.start();
+    vine
+      .add('http://server1', app)
+      .start();
 
     return httpism.get('http://server1/some/file.txt').then(response => {
       expect(response.body).to.eql('some response');
@@ -42,16 +44,12 @@ describe('virtual http adapter', () => {
     });
 
     it('requests made but no hosts added', () => {
-      vine.start();
-
-      return new Promise(function(passed, failed) {
-        return httpism.get('/some/file.txt').then(() => {
-          failed(new Error('should not have been handled'));
-        }).catch(e => {
-          expect(e.message).to.include('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
-          passed();
-        })
-      });
+      try {
+        vine.start();
+        new Error('should not have been handled');
+      } catch(e) {
+        expect(e.message).to.include('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
+      }
     });
   });
 
@@ -59,14 +57,12 @@ describe('virtual http adapter', () => {
     vine.add('http://server1', connect());
     vine.start();
 
-    return new Promise(function(passed, failed) {
-      return httpism.get('http://server2/some/file.txt').then(() => {
-        failed(new Error('should not have been handled'));
-      }).catch(e => {
-        expect(e.message).to.include('No app exists');
-        passed();
-      })
-    });
+    try {
+      httpism.get('http://server2/some/file.txt');
+    }
+    catch (e) {
+      expect(e.message).to.include('No app exists');
+    }
   });
 
   it('sends headers to the server', () => {

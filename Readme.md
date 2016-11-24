@@ -33,6 +33,3 @@ httpism.get('http://weather.com/weather/london').then(response => {
   console.log(response.body.temp);
 });
 ```
-
-# Credit
-The original MockRequest/MockResponse/MockXMLHttpRequest classes came from https://github.com/jameslnewell/xhr-mock
