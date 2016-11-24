@@ -19,9 +19,7 @@ describe('virtual http adapter', () => {
       res.end('some response');
     });
 
-    vine
-      .add('http://server1', app)
-      .start();
+    vine.start('http://server1', app);
 
     return httpism.get('http://server1/some/file.txt').then(response => {
       expect(response.body).to.eql('some response');
@@ -35,8 +33,7 @@ describe('virtual http adapter', () => {
         res.end('some response');
       });
 
-      vine.add('http://server1', app);
-      vine.start();
+      vine.start('http://server1', app);
 
       return httpism.get('/some/file.txt').then(response => {
         expect(response.body).to.eql('some response');
@@ -54,8 +51,7 @@ describe('virtual http adapter', () => {
   });
 
   it('request from server that does not exist', () => {
-    vine.add('http://server1', connect());
-    vine.start();
+    vine.start('http://server1', connect());
 
     try {
       httpism.get('http://server2/some/file.txt');
@@ -71,8 +67,7 @@ describe('virtual http adapter', () => {
       res.json(req.headers);
     });
 
-    vine.add('http://server1', app);
-    vine.start();
+    vine.start('http://server1', app);
 
     return httpism.get('http://server1/some/file.json',{
       headers: {user: 'blob'}
@@ -117,8 +112,7 @@ describe('virtual http adapter', () => {
       });
     });
 
-    vine.add('http://server1', app);
-    vine.start();
+    vine.start('http://server1', app);
 
     return httpism.get('http://server1/some/file.json').then(response => {
       expect(response.body).to.eql({
@@ -136,8 +130,7 @@ describe('virtual http adapter', () => {
         });
       });
 
-      vine.add('http://server1', app);
-      vine.start();
+      vine.start('http://server1', app);
 
       return httpism.get('http://server1/some/file.json').then(response => {
         expect(response.body).to.eql({
@@ -153,8 +146,7 @@ describe('virtual http adapter', () => {
       res.end(JSON.parse(req.body));
     });
 
-    vine.add('http://server1', app);
-    vine.start();
+    vine.start('http://server1', app);
 
     return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(response => {
       expect(response.body).to.eql({

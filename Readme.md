@@ -23,9 +23,16 @@ app.get('/weather/:city', (req, res) => {
 
 
 // connect your app to a host name
-var vinehill = new (require('vinehill'))();
-vinehill.add('http://weather.com', app);
-vinehill.start();
+var VineHill = require('vinehill');
+var vine = new VineHill();
+
+// for a single server
+vine.start('http://weather.com', app);
+
+// or for multiple servers
+// vine.add('http://weather.com', app);
+// vine.add('http://other.com', otherApp);
+// vine.start();
 
 
 var httpism = require('httpism/browser');

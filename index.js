@@ -19,6 +19,9 @@ VineHill.prototype.getOrigin = function(url) {
 }
 
 VineHill.prototype.start = function() {
+  if (arguments.length > 0) {
+    this.add(arguments[0], arguments[1]);
+  }
   var self = this;
   var appDNS = this.appDNS;
   if (Object.keys(appDNS).length === 0) {
