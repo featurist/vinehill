@@ -1,37 +1,13 @@
 var window = require('global');
 
 function VineHill() {
-  this.appDNS = {};
-}
-
-VineHill.prototype.add = function(host, app) {
-  if (Object.keys(this.appDNS).length === 0) this.setOrigin(host);
-  this.appDNS[host] = app;
-  return this;
-}
-
-VineHill.prototype.getOrigin = function(url) {
-  var origin = url.match(/^(https?:\/\/.*?)\/.*/i);
-  if (origin) {
-    return origin[1];
-  }
-  return this.defaultOrigin;
-}
-
-VineHill.prototype.start = function() {
-  if (arguments.length > 0) {
-    this.add(arguments[0], arguments[1]);
-  }
   var self = this;
-  var appDNS = this.appDNS;
-  if (Object.keys(appDNS).length === 0) {
-    throw new Error('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
-  }
+  this.appDNS = {};
 
   function makeMiddleware(before) {
     var vinehillMiddleware = function(req){
       var origin = self.getOrigin(req.url);
-      var requestApp = appDNS[origin];
+      var requestApp = self.appDNS[origin];
       if (!requestApp) {
         throw new Error(`No app exists to listen to requests for ${origin}`);
       }
@@ -70,6 +46,7 @@ VineHill.prototype.start = function() {
         requestApp.handle(request, responseHandler);
       });
     };
+
     vinehillMiddleware.before = [before];
     vinehillMiddleware.middleware = 'vinehill';
     return vinehillMiddleware;
@@ -79,6 +56,30 @@ VineHill.prototype.start = function() {
   require('httpism').insertMiddleware(makeMiddleware('http'));
   require('httpism/browser').removeMiddleware('vinehill');
   require('httpism/browser').insertMiddleware(makeMiddleware('send'));
+}
+
+VineHill.prototype.add = function(host, app) {
+  if (Object.keys(this.appDNS).length === 0) this.setOrigin(host);
+  this.appDNS[host] = app;
+  return this;
+}
+
+VineHill.prototype.getOrigin = function(url) {
+  var origin = url.match(/^(https?:\/\/.*?)\/.*/i);
+  if (origin) {
+    return origin[1];
+  }
+  return this.defaultOrigin;
+}
+
+VineHill.prototype.start = function() {
+  if (arguments.length > 0) {
+    this.add(arguments[0], arguments[1]);
+  }
+  var appDNS = this.appDNS;
+  if (Object.keys(appDNS).length === 0) {
+    throw new Error('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
+  }
 
   window.location = window.location || {};
   window.location.pathname = window.location.pathname || '/';
