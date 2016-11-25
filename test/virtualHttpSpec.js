@@ -138,6 +138,20 @@ describe('virtual http adapter', () => {
         });
       });
     });
+    it('POST json body', () => {
+      var app = express();
+      app.post('/some/file.json', (req, res) => {
+        res.end(JSON.parse(req.body));
+      });
+
+      vine.start('http://server1', app);
+
+      return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(response => {
+        expect(response.body).to.eql({
+          hello: 'world'
+        });
+      });
+    });
   });
 
   it('POST json body', () => {
