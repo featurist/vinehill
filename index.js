@@ -1,4 +1,5 @@
 var window = require('global');
+var ReadableStream = require('stream').Readable;
 
 function VineHill() {
   var self = this;
@@ -21,8 +22,20 @@ function VineHill() {
           _readableState: {},
           socket: {},
         };
-
         var headers = {};
+
+        if (req.body && typeof req.body.pipe == 'function') {
+          var buffer = [];
+          req.body.pipe({
+            write(body) {
+              buffer.push(body);
+            },
+            end(){
+              request.body = buffer.join();
+            }
+          });
+        }
+
         var responseHandler = {
           _removedHeader: {},
           get(name){
@@ -33,8 +46,26 @@ function VineHill() {
           },
           end: function(chunk, encoding){
             var body = chunk;
-            if (chunk instanceof Buffer) {
-              body = chunk.toString(encoding);
+            if (body instanceof Buffer) {
+              body = body.toString(encoding);
+            } else if (typeof body == 'object') {
+              body = JSON.stringify(body);
+              if (!this.get('content-type')) {
+                this.setHeader('content-type', 'application/json');
+              }
+            }
+
+            if (typeof body === 'string' && !this.get('content-type')) {
+              this.setHeader('content-type', 'text/plain');
+            }
+
+            if (before === 'http') {
+              var stream = new ReadableStream();
+              stream._read = function noop() {}; // redundant? see update below
+              stream.push(body);
+              stream.push(null);
+
+              body = stream;
             }
             success({
               headers: headers,
