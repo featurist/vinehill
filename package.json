@@ -1,6 +1,6 @@
 {
   "name": "vinehill",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "In process bridge between http requests and connect based servers",
   "main": "index.js",
   "scripts": {
