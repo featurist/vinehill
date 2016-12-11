@@ -1,5 +1,10 @@
 var window = require('global');
+var isNode = require('is-node');
 var ReadableStream = require('stream').Readable;
+if (!isNode) {
+  require('http').IncomingMessage = {};
+  require('http').ServerResponse = {};
+}
 
 function VineHill() {
   var self = this;
@@ -83,8 +88,10 @@ function VineHill() {
     return vinehillMiddleware;
   }
 
-  require('httpism').removeMiddleware('vinehill');
-  require('httpism').insertMiddleware(makeMiddleware('http'));
+  if (isNode) {
+    require('httpism').removeMiddleware('vinehill');
+    require('httpism').insertMiddleware(makeMiddleware('http'));
+  }
   require('httpism/browser').removeMiddleware('vinehill');
   require('httpism/browser').insertMiddleware(makeMiddleware('send'));
 }
@@ -109,12 +116,15 @@ VineHill.prototype.start = function() {
   }
   var appDNS = this.appDNS;
   if (Object.keys(appDNS).length === 0) {
-    throw new Error('You must add at least one host `vinehill.add("http://localhost:8080", connect())`');
+    throw new Error('You must add at least one host `vinehill.add("http://localhost:8080", express())`');
   }
 
-  window.location = window.location || {};
-  window.location.pathname = window.location.pathname || '/';
-  window.location.origin = window.location.origin || '';
+  if (!window.location) {
+    window.location = {
+      origin: '',
+      pathname: '/',
+    };
+  }
 }
 
 VineHill.prototype.setOrigin = function(host) {
