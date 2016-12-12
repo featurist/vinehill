@@ -15,7 +15,7 @@ function VineHill() {
       var origin = self.getOrigin(req.url);
       var requestApp = self.appDNS[origin];
       if (!requestApp) {
-        throw new Error(`No app exists to listen to requests for ${origin}`);
+        throw new Error('No app exists to listen to requests for '+origin);
       }
 
       return new Promise(function(success){
@@ -32,10 +32,10 @@ function VineHill() {
         if (req.body && typeof req.body.pipe == 'function') {
           var buffer = [];
           req.body.pipe({
-            write(body) {
+            write: function(body) {
               buffer.push(body);
             },
-            end(){
+            end: function(){
               request.body = buffer.join();
             }
           });
@@ -43,10 +43,10 @@ function VineHill() {
 
         var responseHandler = {
           _removedHeader: {},
-          get(name){
+          get: function(name){
             return headers[name.toLowerCase()];
           },
-          setHeader(name, value){
+          setHeader: function(name, value){
             headers[name.toLowerCase()] = value;
           },
           end: function(chunk, encoding){

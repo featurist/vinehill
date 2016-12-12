@@ -10,7 +10,7 @@ What you get is high performance tests with easy to ready stacktraces and great 
 
 # Get started
 
-```
+```js
 var express = require('express');
 var app = express();
 
@@ -40,3 +40,18 @@ httpism.get('http://weather.com/weather/london').then(response => {
   console.log(response.body.temp);
 });
 ```
+# Browser support
+Chrome
+Firefox
+IE 11
+IE Edge
+
+## Unsupported Browsers
+
+Safari:
+  SyntaxError: Cannot declare a parameter named 'error' as it shadows the name of a strict mode function.
+  at /tmp/derek/node_modules/send/index.js:272:0
+
+IE10:
+  Object doesn't support property or method 'use'
+  at /tmp/derek/node_modules/express/lib/application.js:143:0
