@@ -2,6 +2,7 @@ var VineHill = require('../');
 var expect = require('chai').expect;
 var isNode = require('is-node');
 var express = require('express');
+var bodyParser = require('body-parser');
 var httpismServer = require('httpism');
 var httpismBrowser = require('httpism/browser');
 
@@ -131,11 +132,24 @@ modulesToTest.forEach(httpism => {
       });
     });
 
+    it('POST text', () => {
+      var app = express();
+      app.post('/file', (req, res) => {
+        res.send(req.headers);
+      });
+
+      vine.start('http://server1', app);
+
+      return httpism.post('http://server1/file', 'hello').then(response => {
+        expect(response.body['content-length']).to.eql(5);
+      })
+    });
+
     it('POST json body', () => {
       var app = express();
+      app.use(bodyParser.json());
       app.post('/some/file.json', (req, res) => {
-        res.setHeader('content-type', 'application/json');
-        res.end(JSON.parse(req.body));
+        res.json(req.body);
       });
 
       vine.start('http://server1', app);

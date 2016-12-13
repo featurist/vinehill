@@ -18,6 +18,10 @@ function VineHill() {
         throw new Error('No app exists to listen to requests for '+origin);
       }
 
+      if (before === 'send' && req.body && typeof req.body == 'string') {
+        req.headers['content-length'] = req.body.length;
+      }
+
       return new Promise(function(success){
         var request = {
           url: req.url,
