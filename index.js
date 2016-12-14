@@ -23,27 +23,38 @@ function VineHill() {
       }
 
       return new Promise(function(success){
+        var bodyStream = new ReadableStream();
+        bodyStream._read = function(){}
+
         var request = {
           url: req.url,
           method: req.method,
-          body: req.body,
+          body: bodyStream,
           headers: req.headers,
           _readableState: {},
           socket: {},
+          on: function(event, fn) {
+            return this.body.on(event, fn);
+          },
+          removeListener: function noop(){}
         };
+
         var headers = {};
 
         if (req.body && typeof req.body.pipe == 'function') {
-          var buffer = [];
           req.body.pipe({
             write: function(body) {
-              buffer.push(body);
+              bodyStream.push(body);
             },
             end: function(){
-              request.body = buffer.join();
+              bodyStream.push(null);
             }
           });
+        } else {
+          bodyStream.push(req.body);
+          bodyStream.push(null);
         }
+
 
         var responseHandler = {
           _removedHeader: {},
@@ -70,7 +81,7 @@ function VineHill() {
 
             if (before === 'http') {
               var stream = new ReadableStream();
-              stream._read = function noop() {}; // redundant? see update below
+              stream._read = function noop() {};
               stream.push(body);
               stream.push(null);
 
@@ -82,7 +93,6 @@ function VineHill() {
             });
           }
         };
-
         requestApp.handle(request, responseHandler);
       });
     };
