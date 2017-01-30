@@ -19,7 +19,7 @@ modulesToTest.forEach(httpism => {
   describe(`virtual http adapter ${httpism.name}`, () => {
     var vine;
     beforeEach(() => {
-      vine = new VineHill();
+      vine = VineHill();
     });
 
     afterEach(() => vine.stop());

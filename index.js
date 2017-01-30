@@ -7,6 +7,8 @@ if (!isNode) {
 }
 
 function VineHill() {
+  if (!(this instanceof VineHill)) return new VineHill();
+
   var self = this;
   this.appDNS = {};
 
