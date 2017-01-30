@@ -17,9 +17,12 @@ if (isNode) {
 
 modulesToTest.forEach(httpism => {
   describe(`virtual http adapter ${httpism.name}`, () => {
-    var vine;
+    var vine, start;
     beforeEach(() => {
-      vine = VineHill();
+      start = function(url, app) {
+        vine = VineHill(url, app);
+        return vine
+      }
     });
 
     afterEach(() => vine.stop());
@@ -30,7 +33,7 @@ modulesToTest.forEach(httpism => {
         res.end('some response');
       });
 
-      vine.start('http://server1', app);
+      start('http://server1', app);
 
       return httpism.get('http://server1/some/file.txt').then(response => {
         expect(response.body).to.eql('some response');
@@ -44,7 +47,7 @@ modulesToTest.forEach(httpism => {
           res.end('some response');
         });
 
-        vine.start('http://server1', app);
+        start('http://server1', app);
 
         return httpism.get('/some/file.txt').then(response => {
           expect(response.body).to.eql('some response');
@@ -53,7 +56,7 @@ modulesToTest.forEach(httpism => {
 
       it('requests made but no hosts added', () => {
         try {
-          vine.start();
+          start();
           new Error('should not have been handled');
         } catch(e) {
           expect(e.message).to.include('You must add at least one host `vinehill.add("http://localhost:8080", express())`');
@@ -62,7 +65,7 @@ modulesToTest.forEach(httpism => {
     });
 
     it('request from server that does not exist', () => {
-      vine.start('http://server1', express());
+      start('http://server1', express());
 
       try {
         httpism.get('http://server2/some/file.txt');
@@ -78,7 +81,7 @@ modulesToTest.forEach(httpism => {
         res.json(req.headers);
       });
 
-      vine.start('http://server1', app);
+      start('http://server1', app);
 
       return httpism.get('http://server1/some/file.json',{
         headers: {user: 'blob'}
@@ -101,6 +104,7 @@ modulesToTest.forEach(httpism => {
           res.end('app2');
         });
 
+        vine = new VineHill()
         vine.add('http://server1', app1);
         vine.add('http://server2', app2);
         vine.start();
@@ -123,7 +127,7 @@ modulesToTest.forEach(httpism => {
         });
       });
 
-      vine.start('http://server1', app);
+      start('http://server1', app);
 
       return httpism.get('http://server1/some/file.json').then(response => {
         expect(response.body).to.eql({
@@ -138,7 +142,7 @@ modulesToTest.forEach(httpism => {
         res.send(req.headers);
       });
 
-      vine.start('http://server1', app);
+      start('http://server1', app);
 
       return httpism.post('http://server1/file', 'hello').then(response => {
         expect(response.body['content-length']).to.eql(5);
@@ -152,7 +156,7 @@ modulesToTest.forEach(httpism => {
         res.json(req.body);
       });
 
-      vine.start('http://server1', app);
+      start('http://server1', app);
 
       return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(response => {
         expect(response.body).to.eql({

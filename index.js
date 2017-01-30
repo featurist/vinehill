@@ -7,7 +7,7 @@ if (!isNode) {
 }
 
 function VineHill() {
-  if (!(this instanceof VineHill)) return new VineHill();
+  if (!(this instanceof VineHill)) return new VineHill().start(arguments[0], arguments[1]);
 
   var self = this;
   this.appDNS = {};
@@ -141,6 +141,7 @@ VineHill.prototype.start = function() {
       pathname: '/',
     };
   }
+  return this
 }
 
 VineHill.prototype.setOrigin = function(host) {
