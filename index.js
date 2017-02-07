@@ -7,8 +7,6 @@ if (!isNode) {
 }
 
 function VineHill() {
-  if (!(this instanceof VineHill)) return new VineHill().start(arguments[0], arguments[1]);
-
   var self = this;
   this.appDNS = {};
 
@@ -153,4 +151,25 @@ VineHill.prototype.stop = function() {
   this.appDNS = {};
 }
 
-module.exports = VineHill;
+module.exports = function(config) {
+  var serverUrls = Object.keys(config || {}).filter(function(key) {
+    return key.indexOf('http') === 0;
+  })
+
+  if (!serverUrls.length){
+    throw new Error('You must pass a configuration object like:`{"http://localhost:8080": express()}`');
+  }
+
+  if(serverUrls.length > 1 && !config.origin) {
+    throw new Error("When more than one server is provided you must specify the origin: `{'http://server1': app1, 'http://server2': app2, origin: 'http://server1'}`")
+  }
+
+  var vine = new VineHill();
+  serverUrls.forEach(function(url){
+    vine.add(url, config[url]);
+  });
+
+  vine.start();
+
+  return vine;
+};
