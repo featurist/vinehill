@@ -130,7 +130,7 @@ modulesToTest.forEach(httpism => {
           vine.start('http://app', appServer);
           vine.start('http://web', webServer);
 
-          return httpismBrowser.get('http://web/proxied/file.json', {responseBody: 'stream'}).then(response => {
+          return httpismBrowser.get('http://web/proxied/file.json').then(response => {
             expect(response.body).to.equal('some content')
           });
         })
