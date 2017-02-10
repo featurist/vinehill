@@ -113,6 +113,28 @@ modulesToTest.forEach(httpism => {
           });
         });
       });
+      if (httpism.name === 'httpism') {
+        it('can stream response', () => {
+          var appServer = express();
+          appServer.get('/original/file.json', (req, res) => {
+            res.send('some content')
+          });
+
+          var webServer = express();
+          webServer.get('/proxied/file.json', (req, res) => {
+            httpism.get('http://web/original/file.json', { responseBody: 'stream' }).then(response => {
+              response.body.pipe(res);
+            });
+          });
+
+          vine.start('http://app', appServer);
+          vine.start('http://web', webServer);
+
+          return httpismBrowser.get('http://web/proxied/file.json', {responseBody: 'stream'}).then(response => {
+            expect(response.body).to.equal('some content')
+          });
+        })
+      }
     });
 
     it('GET json response', () => {
