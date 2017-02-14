@@ -20,13 +20,29 @@ modulesToTest.forEach(httpism => {
     it('GET plain text response', () => {
       var app = express();
       app.get('/some/file.txt', (req, res) => {
-        res.end('some response');
+        res.status(200).end('some response');
       });
 
       vineHill({'http://server1': app});
 
       return httpism.get('http://server1/some/file.txt').then(response => {
+        expect(response.statusCode).to.equal(200);
         expect(response.body).to.eql('some response');
+      });
+    });
+
+    it('handles a 500 response', () => {
+      var app = express();
+      app.get('/some/file.txt', (req, res) => {
+        res.status(500).send('INTERNAL ERROR')
+      });
+
+      vineHill({'http://server1': app});
+
+      return httpism.get('http://server1/some/file.txt').then(response => {
+        throw new Error('should not have been handled')
+      }).catch(e => {
+        expect(e.message).to.equal('GET http://server1/some/file.txt => 500 Internal Server Error')
       });
     });
 
