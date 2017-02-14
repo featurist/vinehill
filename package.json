@@ -27,6 +27,7 @@
     "httpism": "^2.6.1"
   },
   "dependencies": {
+    "builtin-status-codes": "3.0.0",
     "global": "4.3.1",
     "is-node": "1.0.2"
   },

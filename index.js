@@ -1,5 +1,6 @@
 var window = require('global');
 var isNode = require('is-node');
+var statusCodes = require('builtin-status-codes/browser')
 var ReadableStream = require('stream').Readable;
 if (!isNode) {
   require('http').IncomingMessage = {};
@@ -55,6 +56,7 @@ function VineHill() {
           bodyStream.push(null);
         }
 
+        var statusCode = 200;
 
         var responseHandler = {
           _removedHeader: {},
@@ -63,6 +65,10 @@ function VineHill() {
           },
           setHeader: function(name, value){
             headers[name.toLowerCase()] = value;
+          },
+          status: function(status) {
+            statusCode = status;
+            return this;
           },
           end: function(chunk, encoding){
             var body = chunk;
@@ -88,6 +94,8 @@ function VineHill() {
               body = stream;
             }
             success({
+              statusText: statusCodes[statusCode.toString()],
+              statusCode: statusCode,
               headers: headers,
               body: body
             });
