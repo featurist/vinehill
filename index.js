@@ -37,7 +37,10 @@ function VineHill() {
           on: function(event, fn) {
             return this.body.on(event, fn);
           },
-          removeListener: function noop(){}
+          removeListener: function noop(){},
+          unpipe: function (){
+            responseHandler.status(404).end()
+          }
         };
 
         var headers = {};

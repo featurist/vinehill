@@ -46,6 +46,18 @@ modulesToTest.forEach(httpism => {
       });
     });
 
+    it('handles a 404 when there is no route', () => {
+      var app = express();
+
+      vineHill({'http://server1': app});
+
+      return httpism.get('http://server1/some/file.txt').then(response => {
+        throw new Error('should not have been handled')
+      }).catch(e => {
+        expect(e.message).to.equal('GET http://server1/some/file.txt => 404 Not Found')
+      });
+    });
+
     context('origin', () => {
       it('requests are made from the origin', () => {
         var app = express();
