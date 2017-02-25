@@ -3,8 +3,15 @@ var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
 var ReadableStream = require('stream').Readable;
 if (!isNode) {
-  require('http').IncomingMessage = {};
-  require('http').ServerResponse = {};
+  var http = require('http');
+  http.IncomingMessage = {};
+  http.ServerResponse = {};
+  http.Server = function() {}
+  global.setImmediate = function(cb) {
+    setTimeout(function(){
+      cb.call(arguments)
+    })
+  }
 }
 
 function VineHill() {

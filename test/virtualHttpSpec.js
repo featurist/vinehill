@@ -206,35 +206,33 @@ modulesToTest.forEach(httpism => {
     });
   });
 
-  if (isNode) {
-    var helmet = require('helmet');
+  var helmet = require('helmet');
 
-    describe('express middleware compatibility', () => {
-      function setupWithMiddleware(addMiddlewareFn) {
-        var app = express();
+  describe('express middleware compatibility', () => {
+    function setupWithMiddleware(addMiddlewareFn) {
+      var app = express();
 
-        addMiddlewareFn(app);
+      addMiddlewareFn(app);
 
-        app.use('/some/stuff', (req, res) => {
-          res.end({
-            ok: true
-          });
+      app.use('/some/stuff', (req, res) => {
+        res.end({
+          ok: true
         });
+      });
 
-        vineHill({'http://server1': app});
-      }
+      vineHill({'http://server1': app});
+    }
 
-      it('works with helmet (hsts in particular)', () => {
-        setupWithMiddleware(function(app) {
-          app.use(helmet());
-        })
-
-        return httpism.get('http://server1/some/stuff').then(response => {
-          expect(response.body).to.eql({
-            ok: true
-          });
-        });
+    it('works with helmet (hsts in particular)', () => {
+      setupWithMiddleware(function(app) {
+        app.use(helmet());
       })
+
+      return httpism.get('http://server1/some/stuff').then(response => {
+        expect(response.body).to.eql({
+          ok: true
+        });
+      });
     })
-  }
+  })
 });
