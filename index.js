@@ -34,6 +34,7 @@ function VineHill() {
           headers: req.headers,
           _readableState: {},
           socket: {},
+          connection: {},
           on: function(event, fn) {
             return this.body.on(event, fn);
           },
