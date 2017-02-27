@@ -110,6 +110,10 @@ function VineHill() {
               this.setHeader('content-type', 'text/plain');
             }
 
+            if (!this.headWritten) {
+              this.headWritten = true;
+              this.writeHead(statusCode, headers);
+            }
             stream.push(chunk);
           }
 
@@ -139,6 +143,11 @@ function VineHill() {
 
             if (typeof chunk === 'string' && !this.get('content-type')) {
               this.setHeader('content-type', 'text/plain');
+            }
+
+            if (!this.headWritten) {
+              this.headWritten = true;
+              this.writeHead(statusCode, headers);
             }
             body.push(chunk)
           }
