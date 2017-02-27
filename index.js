@@ -2,6 +2,7 @@ var window = require('global');
 var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
 var ReadableStream = require('stream').Readable;
+
 if (!isNode) {
   var http = require('http');
   http.IncomingMessage = {};
@@ -40,14 +41,16 @@ function VineHill() {
           body: bodyStream,
           headers: req.headers,
           _readableState: {},
-          socket: {},
+          socket: {
+            destroy: function() {}
+          },
           connection: {},
           on: function(event, fn) {
             return this.body.on(event, fn);
           },
           removeListener: function noop(){},
           unpipe: function (){
-            responseHandler.status(404).end()
+            response.status(404).end()
           }
         };
 
@@ -69,9 +72,12 @@ function VineHill() {
 
         var statusCode = 200;
 
-        var responseHandler = {
+        var response = {
           _removedHeader: {},
           get: function(name){
+            return headers[name.toLowerCase()];
+          },
+          getHeader: function(name) {
             return headers[name.toLowerCase()];
           },
           setHeader: function(name, value){
@@ -81,38 +87,74 @@ function VineHill() {
             statusCode = status;
             return this;
           },
-          end: function(chunk, encoding){
-            var body = chunk;
-            if (body instanceof Buffer) {
-              body = body.toString(encoding);
-            } else if (typeof body == 'object') {
-              body = JSON.stringify(body);
+          writeHead: function() {
+            console.log('WRITE HEAD', arguments)
+          }
+        };
+
+        if (before === 'http') {
+          var stream = new ReadableStream();
+          stream._read = function noop() {};
+
+          response.write = function(chunk, encoding) {
+            if (chunk instanceof Buffer) {
+              chunk = chunk.toString(encoding);
+            } else if (typeof chunk == 'object') {
+              chunk = JSON.stringify(chunk);
               if (!this.get('content-type')) {
                 this.setHeader('content-type', 'application/json');
               }
             }
 
-            if (typeof body === 'string' && !this.get('content-type')) {
+            if (typeof chunk === 'string' && !this.get('content-type')) {
               this.setHeader('content-type', 'text/plain');
             }
 
-            if (before === 'http') {
-              var stream = new ReadableStream();
-              stream._read = function noop() {};
-              stream.push(body);
-              stream.push(null);
+            stream.push(chunk);
+          }
 
-              body = stream;
-            }
+          response.end = function(chunk, encoding) {
+            this.write(chunk, encoding)
+            stream.push(null)
+
             success({
               statusText: statusCodes[statusCode.toString()],
               statusCode: statusCode,
               headers: headers,
-              body: body
+              body: stream
             });
           }
-        };
-        requestApp.handle(request, responseHandler);
+        }
+        else {
+          var body = []
+          response.write = function(chunk, encoding) {
+            if (chunk instanceof Buffer) {
+              chunk = chunk.toString(encoding);
+            } else if (typeof chunk == 'object') {
+              chunk = JSON.stringify(chunk);
+              if (!this.get('content-type')) {
+                this.setHeader('content-type', 'application/json');
+              }
+            }
+
+            if (typeof chunk === 'string' && !this.get('content-type')) {
+              this.setHeader('content-type', 'text/plain');
+            }
+            body.push(chunk)
+          }
+
+          response.end = function(chunk, encoding) {
+            this.write(chunk, encoding)
+
+            success({
+              statusText: statusCodes[statusCode.toString()],
+              statusCode: statusCode,
+              headers: headers,
+              body: body.join('')
+            });
+          }
+        }
+        requestApp.handle(request, response);
       });
     };
 

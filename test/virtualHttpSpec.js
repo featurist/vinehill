@@ -33,6 +33,20 @@ modulesToTest.forEach(httpism => {
         expect(response.body).to.eql('some response');
       });
     });
+    it('can write to the body multiple times', () => {
+      var app = express();
+      app.get('/some/file.txt', (req, res) => {
+        res.write('one')
+        res.write('two')
+        res.end()
+      });
+
+      vineHill({'http://server1': app});
+
+      return httpism.get('http://server1/some/file.txt').then(response => {
+        expect(response.body).to.eql('onetwo');
+      });
+    });
 
     it('handles a 500 response', () => {
       var app = express();
@@ -215,18 +229,17 @@ modulesToTest.forEach(httpism => {
 
       addMiddlewareFn(app);
 
-      app.use('/some/stuff', (req, res) => {
-        res.end({
-          ok: true
-        });
-      });
-
       vineHill({'http://server1': app});
     }
 
     it('works with helmet (hsts in particular)', () => {
       setupWithMiddleware(function(app) {
         app.use(helmet());
+        app.get('/some/stuff', (req, res) => {
+          res.end({
+            ok: true
+          });
+        });
       })
 
       return httpism.get('http://server1/some/stuff').then(response => {
@@ -256,9 +269,10 @@ modulesToTest.forEach(httpism => {
         })
       })
 
-      return httpism.get('/set-session').then(() => {
-        return httpism.get('/get-session').then(response => {
-          expect(response.body).to.equal('hello')
+      return httpism.get('/set-session').then(setResponse => {
+        expect(setResponse.body).to.equal('OK');
+        return httpism.get('/get-session', {headers: {Cookie: setResponse.headers['set-cookie'].join('')}}).then(getResponse => {
+          expect(getResponse.body).to.equal('hello')
         })
       });
     })
