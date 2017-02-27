@@ -2,9 +2,12 @@ var vineHill = require('../');
 var expect = require('chai').expect;
 var isNode = require('is-node');
 var express = require('express');
-var bodyParser = require('body-parser');
 var httpismServer = require('httpism');
 var httpismBrowser = require('httpism/browser');
+
+var helmet = require('helmet');
+var setSession = require('express-session');
+var bodyParser = require('body-parser');
 
 httpismServer.name = 'httpism'
 httpismBrowser.name = 'httpism/browser'
@@ -206,8 +209,6 @@ modulesToTest.forEach(httpism => {
     });
   });
 
-  var helmet = require('helmet');
-
   describe('express middleware compatibility', () => {
     function setupWithMiddleware(addMiddlewareFn) {
       var app = express();
@@ -232,6 +233,33 @@ modulesToTest.forEach(httpism => {
         expect(response.body).to.eql({
           ok: true
         });
+      });
+    })
+
+    it('works with sessions', () => {
+      var session = {
+        secret: 'webSessionSecret',
+        cookie: {
+          path: '/',
+          secure: false
+        }
+      }
+      setupWithMiddleware(function(app) {
+        app.use(setSession(session));
+        app.get('/set-session', (req, res) => {
+          req.session.message = 'hello';
+          res.send('OK')
+        })
+
+        app.get('/get-session', (req, res) => {
+          res.send(req.session.message)
+        })
+      })
+
+      return httpism.get('/set-session').then(() => {
+        return httpism.get('/get-session').then(response => {
+          expect(response.body).to.equal('hello')
+        })
       });
     })
   })
