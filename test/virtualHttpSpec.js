@@ -269,9 +269,10 @@ modulesToTest.forEach(httpism => {
         })
       })
 
-      return httpism.get('/set-session').then(setResponse => {
+      var api = httpism.api('http://server1/', {cookies: true});
+      return api.get('/set-session').then(setResponse => {
         expect(setResponse.body).to.equal('OK');
-        return httpism.get('/get-session', {headers: {Cookie: setResponse.headers['set-cookie'].join('')}}).then(getResponse => {
+        return api.get('/get-session').then(getResponse => {
           expect(getResponse.body).to.equal('hello')
         })
       });

@@ -13,6 +13,7 @@ if (!isNode) {
       cb.call(arguments)
     })
   }
+  process.version = '7.5.0';
 }
 
 function VineHill() {
@@ -51,7 +52,8 @@ function VineHill() {
           removeListener: function noop(){},
           unpipe: function (){
             response.status(404).end()
-          }
+          },
+          resume: function noop() {}
         };
 
         var headers = {};
@@ -87,9 +89,7 @@ function VineHill() {
             statusCode = status;
             return this;
           },
-          writeHead: function() {
-            console.log('WRITE HEAD', arguments)
-          }
+          writeHead: function noop() {}
         };
 
         if (before === 'http') {
@@ -125,7 +125,8 @@ function VineHill() {
               statusText: statusCodes[statusCode.toString()],
               statusCode: statusCode,
               headers: headers,
-              body: stream
+              body: stream,
+              url: req.url
             });
           }
         }
@@ -159,7 +160,8 @@ function VineHill() {
               statusText: statusCodes[statusCode.toString()],
               statusCode: statusCode,
               headers: headers,
-              body: body.join('')
+              body: body.join(''),
+              url: req.url
             });
           }
         }
@@ -178,6 +180,10 @@ function VineHill() {
   }
   require('httpism/browser').removeMiddleware('vinehill');
   require('httpism/browser').insertMiddleware(makeMiddleware('send'));
+
+  var cookieMiddleware = require('httpism/middleware').cookies;
+  cookieMiddleware.before = 'vinehill'
+  require('httpism/browser').insertMiddleware(cookieMiddleware);
 }
 
 VineHill.prototype.add = function(host, app) {
