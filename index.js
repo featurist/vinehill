@@ -75,10 +75,9 @@ function VineHill() {
           bodyStream.push(null);
         }
 
-        var statusCode = 200;
-
         var response = {
           _removedHeader: {},
+          statusCode: 200,
           get: function(name){
             return headers[name.toLowerCase()];
           },
@@ -89,7 +88,7 @@ function VineHill() {
             headers[name.toLowerCase()] = value;
           },
           status: function(status) {
-            statusCode = status;
+            this.statusCode = status;
             return this;
           },
           writeHead: function noop() {}
@@ -115,7 +114,7 @@ function VineHill() {
 
             if (!this.headWritten) {
               this.headWritten = true;
-              this.writeHead(statusCode, headers);
+              this.writeHead(this.statusCode, headers);
             }
             stream.push(chunk);
           }
@@ -125,8 +124,8 @@ function VineHill() {
             stream.push(null)
 
             success({
-              statusText: statusCodes[statusCode.toString()],
-              statusCode: statusCode,
+              statusText: statusCodes[this.statusCode.toString()],
+              statusCode: this.statusCode,
               headers: headers,
               body: stream,
               url: req.url
@@ -151,7 +150,7 @@ function VineHill() {
 
             if (!this.headWritten) {
               this.headWritten = true;
-              this.writeHead(statusCode, headers);
+              this.writeHead(this.statusCode, headers);
             }
             body.push(chunk)
           }
@@ -160,8 +159,8 @@ function VineHill() {
             this.write(chunk, encoding)
 
             success({
-              statusText: statusCodes[statusCode.toString()],
-              statusCode: statusCode,
+              statusText: statusCodes[this.statusCode.toString()],
+              statusCode: this.statusCode,
               headers: headers,
               body: body.join(''),
               url: req.url
