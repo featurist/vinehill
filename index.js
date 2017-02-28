@@ -2,6 +2,7 @@ var window = require('global');
 var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
 var ReadableStream = require('stream').Readable;
+var urlUtils = require('url');
 
 if (!isNode) {
   var http = require('http');
@@ -23,6 +24,7 @@ function VineHill() {
   function makeMiddleware(before) {
     var vinehillMiddleware = function(req){
       var origin = self.getOrigin(req.url);
+      var reqUrl = urlUtils.parse(req.url);
       var requestApp = self.appDNS[origin];
       if (!requestApp) {
         throw new Error('No app exists to listen to requests for '+origin);
@@ -37,7 +39,8 @@ function VineHill() {
         bodyStream._read = function(){}
 
         var request = {
-          url: req.url,
+          url: reqUrl.path,
+          hostname: reqUrl.hostname,
           method: req.method,
           body: bodyStream,
           headers: req.headers,
