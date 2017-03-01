@@ -1,8 +1,8 @@
 var window = require('global');
 var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
-var ReadableStream = require('stream').Readable;
 var urlUtils = require('url');
+var stream = require('stream');
 
 if (!isNode) {
   var http = require('http');
@@ -35,14 +35,14 @@ function VineHill() {
       }
 
       return new Promise(function(success){
-        var bodyStream = new ReadableStream();
-        bodyStream._read = function(){}
+        var reqBodyStream = new stream.Readable();
+        reqBodyStream._read = function(){}
 
         var request = {
           url: reqUrl.path,
           hostname: reqUrl.hostname,
           method: req.method,
-          body: bodyStream,
+          body: reqBodyStream,
           headers: req.headers,
           _readableState: {},
           socket: {
@@ -64,39 +64,42 @@ function VineHill() {
         if (req.body && typeof req.body.pipe == 'function') {
           req.body.pipe({
             write: function(body) {
-              bodyStream.push(body);
+              reqBodyStream.push(body);
             },
             end: function(){
-              bodyStream.push(null);
+              reqBodyStream.push(null);
             }
           });
         } else {
-          bodyStream.push(req.body);
-          bodyStream.push(null);
+          reqBodyStream.push(req.body);
+          reqBodyStream.push(null);
         }
 
-        var response = {
-          _removedHeader: {},
-          statusCode: 200,
-          get: function(name){
-            return headers[name.toLowerCase()];
-          },
-          getHeader: function(name) {
-            return headers[name.toLowerCase()];
-          },
-          setHeader: function(name, value){
-            headers[name.toLowerCase()] = value;
-          },
-          status: function(status) {
-            this.statusCode = status;
-            return this;
-          },
-          writeHead: function noop() {}
-        };
+        var response = new stream.Writable({
+          objectMode: true,
+          decodeStings: false,
+        });
+
+        response._removedHeader = {};
+        response.statusCode = 200;
+        response.get = function(name){
+          return headers[name.toLowerCase()];
+        }
+        response.getHeader = function(name) {
+          return headers[name.toLowerCase()];
+        }
+        response.setHeader = function(name, value){
+          headers[name.toLowerCase()] = value;
+        }
+        response.status = function(status) {
+          this.statusCode = status;
+          return this;
+        }
+        response.writeHead = function noop() {}
 
         if (before === 'http') {
-          var stream = new ReadableStream();
-          stream._read = function noop() {};
+          var resBodyStream = new stream.Readable();
+          resBodyStream._read = function noop() {};
 
           response.write = function(chunk, encoding) {
             if (chunk instanceof Buffer) {
@@ -116,18 +119,18 @@ function VineHill() {
               this.headWritten = true;
               this.writeHead(this.statusCode, headers);
             }
-            stream.push(chunk);
+            resBodyStream.push(chunk);
           }
 
           response.end = function(chunk, encoding) {
             this.write(chunk, encoding)
-            stream.push(null)
+            resBodyStream.push(null)
 
             success({
               statusText: statusCodes[this.statusCode.toString()],
               statusCode: this.statusCode,
               headers: headers,
-              body: stream,
+              body: resBodyStream,
               url: req.url
             });
           }
