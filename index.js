@@ -10,8 +10,9 @@ if (!isNode) {
   http.ServerResponse = {};
   http.Server = function() {}
   global.setImmediate = function(cb) {
+    var args = Array.prototype.slice.call(arguments, 1)
     setTimeout(function(){
-      cb.call(arguments)
+      cb.apply(this, args)
     })
   }
   process.version = '7.5.0';
@@ -59,7 +60,6 @@ function VineHill() {
           resume: function noop() {}
         };
 
-        var headers = {};
 
         if (req.body && typeof req.body.pipe == 'function') {
           req.body.pipe({
@@ -80,10 +80,15 @@ function VineHill() {
           decodeStings: false,
         });
 
+        var headers = {};
+        response.headers = headers;
         response._removedHeader = {};
         response.statusCode = 200;
         response.get = function(name){
           return headers[name.toLowerCase()];
+        }
+        response.removeHeader = function(name) {
+          delete [name.toLowerCase()];
         }
         response.getHeader = function(name) {
           return headers[name.toLowerCase()];
@@ -120,6 +125,7 @@ function VineHill() {
               this.writeHead(this.statusCode, headers);
             }
             resBodyStream.push(chunk);
+            return true;
           }
 
           response.end = function(chunk, encoding) {
@@ -155,7 +161,8 @@ function VineHill() {
               this.headWritten = true;
               this.writeHead(this.statusCode, headers);
             }
-            body.push(chunk)
+            body.push(chunk);
+            return true;
           }
 
           response.end = function(chunk, encoding) {
@@ -183,13 +190,66 @@ function VineHill() {
     require('httpism').removeMiddleware('vinehill');
     require('httpism').insertMiddleware(makeMiddleware('http'));
   }
-  require('httpism/browser').removeMiddleware('vinehill');
-  require('httpism/browser').insertMiddleware(makeMiddleware('send'));
 
-  var cookieMiddleware = require('httpism/middleware').cookies;
-  cookieMiddleware.before = 'vinehill'
-  require('httpism/browser').insertMiddleware(cookieMiddleware);
+  var middleware = require('httpism/middleware');
+  var httpismBrowser = require('httpism/browser')
+  httpismBrowser.removeMiddleware('vinehill');
+  httpismBrowser.insertMiddleware(makeMiddleware('send'));
+
+  httpismBrowser.removeMiddleware('cookies');
+  httpismBrowser.removeMiddleware('redirect');
+
+  browserMiddleware.cookies.before = 'vinehill';
+  browserMiddleware.cookies.name = 'cookies';
+  httpismBrowser.insertMiddleware(browserMiddleware.cookies);
+
+  browserMiddleware.redirect.before = 'cookies';
+  httpismBrowser.insertMiddleware(browserMiddleware.redirect)
 }
+var browserMiddleware = {};
+
+function middleware(name, fn) {
+  browserMiddleware[name] = fn;
+  fn.middleware = name;
+}
+
+middleware('redirect', function(request, next, api) {
+  return next().then(function(response) {
+    var statusCode = response.statusCode;
+    var location = response.headers.location;
+
+    if (request.options.redirect !== false && location && (statusCode === 300 || statusCode === 301 || statusCode === 302 || statusCode === 303 || statusCode === 307)) {
+      return api.get(urlUtils.resolve(request.url, location), request.options).then(function(redirectResponse) {
+        throw {
+          redirectResponse: redirectResponse
+        };
+      });
+    } else {
+      return response;
+    }
+  });
+});
+
+var cookieStore = {}
+middleware('cookies', function (request, next, api) {
+  var url = require('url').parse(request.url)
+  var cookies = request.options.cookies = api._options.cookies = cookieStore;
+  var cookieUrl = url.protocol + '://'+url.hostname
+
+  if (cookies) {
+    if (cookies[cookieUrl]) {
+      request.headers.cookie = cookies[cookieUrl]
+    }
+    return next().then(function (response) {
+      if (response.headers['set-cookie']) {
+        cookies[cookieUrl] = response.headers['set-cookie'].join(',')
+      }
+      return response;
+    });
+  } else {
+    return next();
+  }
+});
 
 VineHill.prototype.add = function(host, app) {
   if (Object.keys(this.appDNS).length === 0) this.setOrigin(host);

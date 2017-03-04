@@ -223,6 +223,24 @@ modulesToTest.forEach(httpism => {
     });
   });
 
+  it('can redirect', () => {
+    var app = express();
+    app.get('/some/file.json', (req, res) => {
+      res.redirect('/some/other.json')
+    });
+
+    app.get('/some/other.json', (req, res) => {
+      res.send('OK')
+    })
+
+    vineHill({'http://server1': app});
+
+    return httpism.get('/some/file.json').then(response => {
+      expect(response.statusCode).to.equal(200)
+      expect(response.url).to.equal('/some/other.json')
+    })
+  })
+
   describe('express middleware compatibility', () => {
     function setupWithMiddleware(addMiddlewareFn) {
       var app = express();
