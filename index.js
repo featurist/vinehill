@@ -2,11 +2,11 @@ var window = require('global');
 var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
 var urlUtils = require('url');
-var stream = require('stream');
+var Stream = require('stream');
 
 if (!isNode) {
   var http = require('http');
-  http.IncomingMessage = {};
+  http.IncomingMessage = {prototype: Stream.Readable.prototype}
   http.ServerResponse = {};
   http.Server = function() {}
   global.setImmediate = function(cb) {
@@ -36,46 +36,37 @@ function VineHill() {
       }
 
       return new Promise(function(success){
-        var reqBodyStream = new stream.Readable();
-        reqBodyStream._read = function(){}
+        var request = new Stream.Readable();
 
-        var request = {
-          url: reqUrl.path,
-          hostname: reqUrl.hostname,
-          method: req.method,
-          body: reqBodyStream,
-          headers: req.headers,
-          _readableState: {},
-          socket: {
-            destroy: function() {}
-          },
-          connection: {},
-          on: function(event, fn) {
-            return this.body.on(event, fn);
-          },
-          removeListener: function noop(){},
-          unpipe: function (){
-            response.status(404).end()
-          },
-          resume: function noop() {}
-        };
-
-
-        if (req.body && typeof req.body.pipe == 'function') {
-          req.body.pipe({
-            write: function(body) {
-              reqBodyStream.push(body);
-            },
-            end: function(){
-              reqBodyStream.push(null);
-            }
-          });
-        } else {
-          reqBodyStream.push(req.body);
-          reqBodyStream.push(null);
+        request.url = reqUrl.path
+        request.hostname = reqUrl.hostname
+        request.method = req.method
+        request.headers = req.headers
+        request.socket = {
+          destroy: function() {}
+        }
+        request.connection = {}
+        request.unpipe = function (){
+          response.status(404).end()
+        }
+        request._read = function () {
+          if (req.body && typeof req.body.pipe == 'function') {
+            req.body.pipe({
+              write: function(body) {
+                request.push(body);
+              },
+              end: function(){
+                request.push(null);
+              }
+            });
+          } else {
+            request.push(req.body);
+            request.push(null);
+          }
         }
 
-        var response = new stream.Writable({
+
+        var response = new Stream.Writable({
           objectMode: true,
           decodeStings: false,
         });
@@ -103,7 +94,7 @@ function VineHill() {
         response.writeHead = function noop() {}
 
         if (before === 'http') {
-          var resBodyStream = new stream.Readable();
+          var resBodyStream = new Stream.Readable();
           resBodyStream._read = function noop() {};
 
           response.write = function(chunk, encoding) {
