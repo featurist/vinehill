@@ -1,4 +1,4 @@
-#Vine Hill
+# Vine Hill
 A Virtual Http adapter to allow in process xhr
 
 # Why?
@@ -40,11 +40,13 @@ httpism.get('http://weather.com/weather/london').then(response => {
   console.log(response.body.temp);
 });
 ```
+
 # Browser support
-Chrome
-Firefox
-IE 11
-IE Edge
+
+* Chrome
+* Firefox
+* IE 11
+* IE Edge
 
 ## Unsupported Browsers
 
