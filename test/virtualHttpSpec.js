@@ -24,6 +24,17 @@ if (isNode) {
 
 modulesToTest.forEach(httpism => {
   describe(`virtual http adapter ${httpism.name}`, () => {
+    it('missing url throws exception', () => {
+      var app = express();
+      app.get('/some/file.txt', (req, res) => {
+        res.status(200).end('some response');
+      });
+
+      vineHill({'http://server1': app});
+
+      return expect(() => httpism.get(undefined)).to.throw('The request object must supply a url')
+    });
+
     it('GET plain text response', () => {
       var app = express();
       app.get('/some/file.txt', (req, res) => {

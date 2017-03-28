@@ -25,6 +25,9 @@ function VineHill() {
 
   function makeMiddleware(before) {
     var vinehillMiddleware = function(req){
+      if (!req.url) {
+        throw new Error('The request object must supply a url')
+      }
       var origin = self.getOrigin(req.url);
       var reqUrl = urlUtils.parse(req.url);
       var requestApp = self.appDNS[origin];
