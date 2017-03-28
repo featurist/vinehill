@@ -13,6 +13,7 @@
     "body-parser": "^1.15.2",
     "browserify": "^13.1.1",
     "chai": "3.5.0",
+    "chai-subset": "^1.5.0",
     "connect": "3.5.0",
     "express": "4.14.0",
     "express-session": "^1.15.1",
@@ -30,6 +31,7 @@
   },
   "dependencies": {
     "builtin-status-codes": "3.0.0",
+    "debug": "^2.6.3",
     "global": "4.3.1",
     "is-node": "1.0.2"
   },

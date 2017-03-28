@@ -1,5 +1,8 @@
 var vineHill = require('../');
-var expect = require('chai').expect;
+var chai = require('chai');
+var chaiSubset = require('chai-subset');
+chai.use(chaiSubset);
+var expect = chai.expect;
 var isNode = require('is-node');
 var express = require('express');
 var httpismServer = require('httpism');
@@ -8,6 +11,7 @@ var httpismBrowser = require('httpism/browser');
 var helmet = require('helmet');
 var setSession = require('express-session');
 var bodyParser = require('body-parser');
+var logger = require('./fakeLogger')
 
 httpismServer.name = 'httpism'
 httpismBrowser.name = 'httpism/browser'
@@ -293,6 +297,78 @@ modulesToTest.forEach(httpism => {
         return api.get('/get-session').then(getResponse => {
           expect(getResponse.body).to.equal('hello')
         })
+      });
+    })
+  })
+
+  describe('logging', () => {
+    beforeEach(() => {
+      logger.start()
+    })
+
+    afterEach(() => {
+      logger.stop()
+    })
+
+    it('logs the request and response', () => {
+      var app = express();
+      app.put('/some/file.txt', (req, res) => {
+        res.status(200).end('some response');
+      });
+
+
+      vineHill({'http://server1': app});
+
+      var putBody = {a: 1}
+
+      return httpism.put('http://server1/some/file.txt', putBody).then(() => {
+        expect(logger.main).to.contain('PUT: http://server1/some/file.txt => 200 OK')
+
+        var request = logger.requests[0]
+        expect(request).to.containSubset({
+          method: 'put',
+          url: 'http://server1/some/file.txt',
+          headers: {
+            accept: 'application/json',
+            'content-length': 7,
+            'content-type': 'application/json'
+          }
+        })
+
+        var assertions = {
+          'httpism': function () {
+            expect(typeof request.body.pipe).to.equal('function')
+            expect(request.stringBody).to.equal(JSON.stringify(putBody))
+          },
+          'httpism/browser': function () {
+            expect(request.body).to.equal(JSON.stringify(putBody))
+          }
+        }[httpism.name]()
+
+
+        var response = logger.responses[0]
+        expect(response).to.contain({
+          url: 'http://server1/some/file.txt',
+          body: 'some response',
+          statusCode: 200,
+          statusText: 'OK'
+        })
+
+      });
+    })
+
+    it('logs a server error', () => {
+      var app = express();
+      app.get('/some/file.txt', (req, res) => {
+        res.status(500).send('INTERNAL ERROR')
+      });
+
+      vineHill({'http://server1': app});
+
+      return httpism.get('http://server1/some/file.txt').then(response => {
+        throw new Error('should not have been handled')
+      }).catch(e => {
+        expect(logger.main).to.contain('GET: http://server1/some/file.txt => 500 Internal Server Error')
       });
     })
   })
