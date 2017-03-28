@@ -9,7 +9,7 @@ module.exports.start = () => {
   this.responses = []
   this.main = []
 
-  logger.main = function(req) {
+  logger.main = function (req) {
     self.main.push(req)
     originalMainLogger.apply(logger, arguments)
   }
@@ -22,7 +22,6 @@ module.exports.start = () => {
     originalResponseLogger.apply(logger, arguments)
   }
 }
-
 
 module.exports.stop = () => {
   logger.main = originalMainLogger

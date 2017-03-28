@@ -1,17 +1,17 @@
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
     basePath: '',
     frameworks: ['mocha', 'browserify'],
     files: [
-      'test/**/*Spec.js',
+      'test/**/*Spec.js'
     ],
     exclude: [
     ],
     browserify: {
-      debug: true,
+      debug: true
     },
     preprocessors: {
-      'test/**/*Spec.js': ['browserify'],
+      'test/**/*Spec.js': ['browserify']
     },
     reporters: ['progress'],
     port: 9876,
