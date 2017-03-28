@@ -3,6 +3,7 @@ var isNode = require('is-node');
 var statusCodes = require('builtin-status-codes/browser')
 var urlUtils = require('url');
 var Stream = require('stream');
+var log = require('./log')
 
 if (!isNode) {
   var http = require('http');
@@ -36,6 +37,7 @@ function VineHill() {
       }
 
       return new Promise(function(success){
+        log.request(req)
         var request = new Stream.Readable();
 
         request.url = reqUrl.path
@@ -169,7 +171,11 @@ function VineHill() {
           }
         }
         requestApp.handle(request, response);
-      });
+      }).then(res => {
+        log.main(req.method.toUpperCase() + ': ' + req.url + ' => ' + res.statusCode + ' ' + res.statusText)
+        log.response(res)
+        return res
+      })
     };
 
     vinehillMiddleware.before = [before];
