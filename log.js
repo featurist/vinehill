@@ -29,18 +29,15 @@ function prepareForLogging(request) {
     statusText: request.statusText
   });
 }
+
 module.exports = {
-  debug: function(message) {
+  main: function(message) {
     debug(message)
   },
-
-  main: function(message) {
-    this.debug(message)
-  },
   request: function(req) {
-    this.debug(prepareForLogging(req))
+    debugRequest(prepareForLogging(req))
   },
   response: function(res) {
-    this.debug(prepareForLogging(res))
+    debugResponse(prepareForLogging(res))
   }
 }

@@ -41,6 +41,28 @@ httpism.get('http://weather.com/weather/london').then(response => {
 });
 ```
 
+# Logging
+
+Vinehill logs requests/responses using the excellent [debug](https://www.npmjs.com/package/debug) module
+To log in the console set the `DEBUG` env variable to `vinehill*` and then run your tests.
+
+For example:
+
+```
+DEBUG=vinehill* mocha
+```
+
+If you are using vinehill in a browser then you can enable logging by running this code in the console (or before vinehill is required)
+
+```js
+localStorage.debug = 'vinehill*'
+```
+You can further filter logging by replacing `vinehill*`:
+ - `vinehill` only logs a simplified `METHOD: URL STATUS => STATUSTEXT` eg. `PUT: http://server1/some/file.txt => 200 OK`
+- `vinehill:request` only log request objects
+- `vinehill:response` only log response objects
+- `vinehill*` log request, response and simplified version
+
 # Browser support
 
 * Chrome
