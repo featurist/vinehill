@@ -172,7 +172,7 @@ function VineHill () {
           }
         }
         requestApp.handle(request, response)
-      }).then(res => {
+      }).then(function (res) {
         log.main(req.method.toUpperCase() + ': ' + req.url + ' => ' + res.statusCode + ' ' + res.statusText)
         log.response(res)
         return res

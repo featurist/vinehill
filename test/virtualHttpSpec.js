@@ -1,3 +1,4 @@
+require('lie/polyfill')
 var vineHill = require('../')
 var chai = require('chai')
 var chaiSubset = require('chai-subset')

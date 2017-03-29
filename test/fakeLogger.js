@@ -3,7 +3,7 @@ var originalMainLogger = logger.main
 var originalRequestLogger = logger.request
 var originalResponseLogger = logger.response
 
-module.exports.start = () => {
+module.exports.start = function () {
   var self = this
   this.requests = []
   this.responses = []
@@ -23,7 +23,7 @@ module.exports.start = () => {
   }
 }
 
-module.exports.stop = () => {
+module.exports.stop = function () {
   logger.main = originalMainLogger
   logger.request = originalRequestLogger
   logger.response = originalResponseLogger
