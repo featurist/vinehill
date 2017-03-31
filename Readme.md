@@ -1,4 +1,5 @@
-# Vine Hill
+# Vine Hill [![npm version](https://img.shields.io/npm/v/vinehill.svg)](https://www.npmjs.com/package/vinehill) [![npm](https://img.shields.io/npm/dm/vinehill.svg)](https://www.npmjs.com/package/vinehill) [![Build Status](https://travis-ci.org/featurist/vinehill.svg?branch=master)](https://travis-ci.org/featurist/vinehill) [![Gitter chat](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/featurist/stack)
+
 A Virtual Http adapter to allow in process xhr
 
 # Why?
