@@ -6,6 +6,9 @@ chai.use(chaiSubset)
 var expect = chai.expect
 var isNode = require('is-node')
 var express = require('express')
+
+global.FormData = function () {}
+
 var httpismServer = require('httpism')
 var httpismBrowser = require('httpism/browser')
 
