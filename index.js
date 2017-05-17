@@ -1,9 +1,8 @@
 var window = require('global')
 var isNode = require('is-node')
-var statusCodes = require('builtin-status-codes/browser')
-var urlUtils = require('url')
 var Stream = require('stream')
-var log = require('./log')
+var browserMiddleware = require('./browserMiddleware')
+var makeMiddleware = require('./makeMiddleware')
 
 if (!isNode) {
   var http = require('http')
@@ -20,233 +19,27 @@ if (!isNode) {
 }
 
 function VineHill () {
-  var self = this
   this.appDNS = {}
 
-  function makeMiddleware (before) {
-    var vinehillMiddleware = function (req) {
-      if (!req.url) {
-        throw new Error('The request object must supply a url')
-      }
-      var origin = self.getOrigin(req.url)
-      var reqUrl = urlUtils.parse(req.url)
-      var requestApp = self.appDNS[origin]
-      if (!requestApp) {
-        throw new Error('No app exists to listen to requests for ' + origin)
-      }
-
-      if (before === 'send' && req.body && typeof req.body === 'string') {
-        req.headers['content-length'] = req.body.length
-      }
-
-      return new Promise(function (resolve) {
-        log.request(req)
-        var request = new Stream.Readable()
-
-        request.url = reqUrl.path
-        request.hostname = reqUrl.hostname
-        request.method = req.method
-        request.headers = req.headers
-        request.socket = {
-          destroy: function () {}
-        }
-        request.connection = {}
-        request.unpipe = function () {
-          response.status(404).end()
-        }
-        request._read = function () {
-          if (req.body && typeof req.body.pipe === 'function') {
-            req.body.pipe({
-              write: function (body) {
-                request.push(body)
-              },
-              end: function () {
-                request.push(null)
-              }
-            })
-          } else {
-            request.push(req.body)
-            request.push(null)
-          }
-        }
-
-        var response = new Stream.Writable({
-          objectMode: true,
-          decodeStings: false
-        })
-
-        var headers = {}
-        response.headers = headers
-        response._removedHeader = {}
-        response.statusCode = 200
-        response.get = function (name) {
-          return headers[name.toLowerCase()]
-        }
-        response.removeHeader = function (name) {
-          delete [name.toLowerCase()]
-        }
-        response.getHeader = function (name) {
-          return headers[name.toLowerCase()]
-        }
-        response.setHeader = function (name, value) {
-          headers[name.toLowerCase()] = value
-        }
-        response.status = function (status) {
-          this.statusCode = status
-          return this
-        }
-        response.writeHead = function noop () {}
-
-        if (before === 'http') {
-          var resBodyStream = new Stream.Readable()
-          resBodyStream._read = function noop () {}
-
-          response.write = function (chunk, encoding) {
-            if (chunk instanceof Buffer) {
-              chunk = chunk.toString(encoding)
-            } else if (typeof chunk === 'object') {
-              chunk = JSON.stringify(chunk)
-              if (!this.get('content-type')) {
-                this.setHeader('content-type', 'application/json')
-              }
-            }
-
-            if (typeof chunk === 'string' && !this.get('content-type')) {
-              this.setHeader('content-type', 'text/plain')
-            }
-
-            if (!this.headWritten) {
-              this.headWritten = true
-              this.writeHead(this.statusCode, headers)
-            }
-            resBodyStream.push(chunk)
-            return true
-          }
-
-          response.end = function (chunk, encoding) {
-            this.write(chunk, encoding)
-            resBodyStream.push(null)
-
-            resolve({
-              statusText: statusCodes[this.statusCode.toString()],
-              statusCode: this.statusCode,
-              headers: headers,
-              body: resBodyStream,
-              url: req.url
-            })
-          }
-        } else {
-          var body = []
-          response.write = function (chunk, encoding) {
-            if (chunk instanceof Buffer) {
-              chunk = chunk.toString(encoding)
-            } else if (typeof chunk === 'object') {
-              chunk = JSON.stringify(chunk)
-              if (!this.get('content-type')) {
-                this.setHeader('content-type', 'application/json')
-              }
-            }
-
-            if (typeof chunk === 'string' && !this.get('content-type')) {
-              this.setHeader('content-type', 'text/plain')
-            }
-
-            if (!this.headWritten) {
-              this.headWritten = true
-              this.writeHead(this.statusCode, headers)
-            }
-            body.push(chunk)
-            return true
-          }
-
-          response.end = function (chunk, encoding) {
-            this.write(chunk, encoding)
-
-            resolve({
-              statusText: statusCodes[this.statusCode.toString()],
-              statusCode: this.statusCode,
-              headers: headers,
-              body: body.join(''),
-              url: req.url
-            })
-          }
-        }
-        requestApp.handle(request, response)
-      }).then(function (res) {
-        log.main(req.method.toUpperCase() + ': ' + req.url + ' => ' + res.statusCode + ' ' + res.statusText)
-        log.response(res)
-        return res
-      })
-    }
-
-    vinehillMiddleware.before = [before]
-    vinehillMiddleware.middleware = 'vinehill'
-    return vinehillMiddleware
-  }
-
   if (isNode) {
-    require('httpism').removeMiddleware('vinehill')
-    require('httpism').insertMiddleware(makeMiddleware('http'))
+    require('httpism').remove('vinehill')
+    require('httpism').use(makeMiddleware(this, 'http'))
   }
 
   var httpismBrowser = require('httpism/browser')
-  httpismBrowser.removeMiddleware('vinehill')
-  httpismBrowser.insertMiddleware(makeMiddleware('send'))
+  httpismBrowser.remove('vinehill')
+  httpismBrowser.use(makeMiddleware(this, 'xhr'))
 
-  httpismBrowser.removeMiddleware('cookies')
-  httpismBrowser.removeMiddleware('redirect')
+  httpismBrowser.remove('cookies')
+  httpismBrowser.remove('redirect')
 
   browserMiddleware.cookies.before = 'vinehill'
   browserMiddleware.cookies.name = 'cookies'
-  httpismBrowser.insertMiddleware(browserMiddleware.cookies)
+  httpismBrowser.use(browserMiddleware.cookies)
 
   browserMiddleware.redirect.before = 'cookies'
-  httpismBrowser.insertMiddleware(browserMiddleware.redirect)
+  httpismBrowser.use(browserMiddleware.redirect)
 }
-var browserMiddleware = {}
-
-function middleware (name, fn) {
-  browserMiddleware[name] = fn
-  fn.middleware = name
-}
-
-middleware('redirect', function (request, next, api) {
-  return next().then(function (response) {
-    var statusCode = response.statusCode
-    var location = response.headers.location
-
-    if (request.options.redirect !== false && location && (statusCode === 300 || statusCode === 301 || statusCode === 302 || statusCode === 303 || statusCode === 307)) {
-      return api.get(urlUtils.resolve(request.url, location), request.options).then(function (redirectResponse) {
-        var error = new Error()
-        error.redirectResponse = redirectResponse
-        throw error
-      })
-    } else {
-      return response
-    }
-  })
-})
-
-var cookieStore = {}
-middleware('cookies', function (request, next, api) {
-  var url = require('url').parse(request.url)
-  var cookies = request.options.cookies = api._options.cookies = cookieStore
-  var cookieUrl = url.protocol + '://' + url.hostname
-
-  if (cookies) {
-    if (cookies[cookieUrl]) {
-      request.headers.cookie = cookies[cookieUrl]
-    }
-    return next().then(function (response) {
-      if (response.headers['set-cookie']) {
-        cookies[cookieUrl] = response.headers['set-cookie'].join(',')
-      }
-      return response
-    })
-  } else {
-    return next()
-  }
-})
 
 VineHill.prototype.add = function (host, app) {
   if (Object.keys(this.appDNS).length === 0) this.setOrigin(host)

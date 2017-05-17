@@ -44,7 +44,7 @@ modulesToTest.forEach(httpism => {
 
       vineHill({'http://server1': app})
 
-      return httpism.get('http://server1/some/file.txt').then(response => {
+      return httpism.get('http://server1/some/file.txt', {response: true}).then(response => {
         expect(response.statusCode).to.equal(200)
         expect(response.body).to.eql('some response')
       })
@@ -59,7 +59,7 @@ modulesToTest.forEach(httpism => {
 
       vineHill({'http://server1': app})
 
-      return httpism.get('http://server1/some/file.txt').then(response => {
+      return httpism.get('http://server1/some/file.txt', {response: true}).then(response => {
         expect(response.body).to.eql('onetwo')
       })
     })
@@ -100,7 +100,7 @@ modulesToTest.forEach(httpism => {
 
         vineHill({'http://server1': app})
 
-        return httpism.get('/some/file.txt').then(response => {
+        return httpism.get('/some/file.txt', {response: true}).then(response => {
           expect(response.body).to.eql('some response')
         })
       })
@@ -155,7 +155,8 @@ modulesToTest.forEach(httpism => {
       vineHill({'http://server1': app})
 
       return httpism.get('http://server1/some/file.json', {
-        headers: {user: 'blob'}
+        headers: {user: 'blob'},
+        response: true
       }).then(response => {
         expect(response.body).to.include({
           user: 'blob'
@@ -181,10 +182,10 @@ modulesToTest.forEach(httpism => {
           origin: 'http://server1'
         })
 
-        return httpism.get('http://server1/some/file.txt').then(response => {
+        return httpism.get('http://server1/some/file.txt', {response: true}).then(response => {
           expect(response.body).to.eql('app1')
         }).then(() => {
-          return httpism.get('http://server2/some/file.txt').then(response => {
+          return httpism.get('http://server2/some/file.txt', {response: true}).then(response => {
             expect(response.body).to.eql('app2')
           })
         })
@@ -201,8 +202,8 @@ modulesToTest.forEach(httpism => {
 
       vineHill({'http://server1': app})
 
-      return httpism.get('http://server1/some/file.json').then(response => {
-        expect(response.body).to.eql({
+      return httpism.get('http://server1/some/file.json').then(body => {
+        expect(body).to.eql({
           ok: true
         })
       })
@@ -216,8 +217,8 @@ modulesToTest.forEach(httpism => {
 
       vineHill({'http://server1': app})
 
-      return httpism.post('http://server1/file', 'hello').then(response => {
-        expect(response.body['content-length']).to.eql(5)
+      return httpism.post('http://server1/file', 'hello').then(body => {
+        expect(body['content-length']).to.eql(5)
       })
     })
 
@@ -230,8 +231,8 @@ modulesToTest.forEach(httpism => {
 
       vineHill({'http://server1': app})
 
-      return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(response => {
-        expect(response.body).to.eql({
+      return httpism.post('http://server1/some/file.json', {hello: 'world'}).then(body => {
+        expect(body).to.eql({
           hello: 'world'
         })
       })
@@ -250,7 +251,7 @@ modulesToTest.forEach(httpism => {
 
     vineHill({'http://server1': app})
 
-    return httpism.get('/some/file.json').then(response => {
+    return httpism.get('/some/file.json', {response: true}).then(response => {
       expect(response.statusCode).to.equal(200)
       expect(response.url).to.equal('/some/other.json')
     })
@@ -275,8 +276,8 @@ modulesToTest.forEach(httpism => {
         })
       })
 
-      return httpism.get('http://server1/some/stuff').then(response => {
-        expect(response.body).to.eql({
+      return httpism.get('http://server1/some/stuff').then(body => {
+        expect(body).to.eql({
           ok: true
         })
       })
@@ -302,11 +303,11 @@ modulesToTest.forEach(httpism => {
         })
       })
 
-      var api = httpism.api('http://server1/', {cookies: true})
-      return api.get('/set-session').then(setResponse => {
-        expect(setResponse.body).to.equal('OK')
-        return api.get('/get-session').then(getResponse => {
-          expect(getResponse.body).to.equal('hello')
+      var api = httpism.client('http://server1/', {cookies: true})
+      return api.get('/set-session').then(setBody => {
+        expect(setBody).to.equal('OK')
+        return api.get('/get-session').then(getBody => {
+          expect(getBody).to.equal('hello')
         })
       })
     })
