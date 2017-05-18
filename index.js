@@ -20,14 +20,13 @@ if (!isNode) {
 
 function VineHill () {
   this.appDNS = {}
+  VineHill.remove()
 
   if (isNode) {
-    require('httpism').remove('vinehill')
     require('httpism').use(makeMiddleware(this, 'http'))
   }
 
   var httpismBrowser = require('httpism/browser')
-  httpismBrowser.remove('vinehill')
   httpismBrowser.use(makeMiddleware(this, 'xhr'))
 
   httpismBrowser.remove('cookies')
@@ -82,6 +81,11 @@ VineHill.prototype.stop = function () {
   this.appDNS = {}
 }
 
+VineHill.remove = function () {
+  require('httpism').remove('vinehill')
+  require('httpism/browser').remove('vinehill')
+}
+
 module.exports = function (config) {
   var serverUrls = Object.keys(config || {}).filter(function (key) {
     return key.indexOf('http') === 0
@@ -104,3 +108,5 @@ module.exports = function (config) {
 
   return vine
 }
+
+module.exports.remove = VineHill.remove
