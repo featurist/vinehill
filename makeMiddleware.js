@@ -2,6 +2,7 @@ var statusCodes = require('builtin-status-codes/browser')
 var urlUtils = require('url')
 var Stream = require('stream')
 var log = require('./log')
+var TextEncoder = require('text-encoding').TextEncoder
 
 module.exports = function makeMiddleware (vine, type) {
   var vinehillMiddleware = function (req) {
@@ -16,7 +17,7 @@ module.exports = function makeMiddleware (vine, type) {
     }
 
     if (type === 'xhr' && req.body && typeof req.body === 'string') {
-      req.headers['content-length'] = req.body.length
+      req.headers['content-length'] = (new TextEncoder('utf-8').encode(req.body)).length
     }
 
     return new Promise(function (resolve) {

@@ -36,9 +36,10 @@
   },
   "dependencies": {
     "builtin-status-codes": "3.0.0",
-    "debug": "^2.6.3",
+    "debug": "2.6.3",
     "global": "4.3.1",
-    "is-node": "1.0.2"
+    "is-node": "1.0.2",
+    "text-encoding": "0.6.4"
   },
   "directories": {
     "test": "test"

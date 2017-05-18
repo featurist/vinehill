@@ -240,6 +240,20 @@ modulesToTest.forEach(httpism => {
         })
       })
     })
+
+    it('POST body with utf-8 chars', () => {
+      var app = express()
+      app.use(bodyParser.json())
+      app.post('/some/file.json', (req, res) => {
+        res.json(req.body)
+      })
+
+      vineHill({'http://server1': app})
+      const data = {value: 'crème'}
+      return httpism.post('http://server1/some/file.json', data).then(body => {
+        expect(body).to.eql(data)
+      })
+    })
   })
 
   it('can redirect', () => {
